@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UP Circuit Membership Portal</title>
+  <style>
+    :root {
+      --navy: #33368b;
+      --blue: #1274b5;
+      --blue-soft: #ddf1fc;
+      --ink: #1d2945;
+      --muted: #62718a;
+      --line: #c6e0f1;
+      --surface: #ffffff;
+      --bg: #f3fafe;
+      --green-bg: #dcfce7;
+      --green: #166534;
+      --amber-bg: #fef3c7;
+      --amber: #92400e;
+      --red-bg: #fee2e2;
+      --red: #991b1b;
+      --gray-bg: #eef2f6;
+      --gray: #475467;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(117,195,235,.38), transparent 35%),
+        linear-gradient(180deg, #c9e6f9 0, #eaf7fd 350px, var(--bg) 100%);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    .shell { width: min(1080px, calc(100% - 28px)); margin: 24px auto 40px; }
+    .banner {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 16px 40px rgba(18,116,181,.18);
+    }
+    .hero {
+      border-radius: 22px;
+      padding: 26px;
+      color: #fff;
+      background: linear-gradient(135deg, #1274b5 0%, #267fbc 65%, #4595c8 100%);
+      box-shadow: 0 16px 38px rgba(18,116,181,.22);
+    }
+    .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.28);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .hero h1 { margin: 15px 0 7px; font-size: clamp(28px, 5vw, 43px); letter-spacing: -.04em; }
+    .hero p { margin: 0; max-width: 760px; color: rgba(255,255,255,.94); line-height: 1.55; }
+    .logout { display: none; color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.4); }
+    .logout.visible { display: inline-flex; }
+    .logout:hover { background: rgba(255,255,255,.16); }
+
+    .grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 18px; margin-top: 18px; align-items: start; }
+    .card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 19px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 10px 28px rgba(51,54,139,.08);
+    }
+    .card + .card { margin-top: 16px; }
+    h2, h3 { letter-spacing: -.02em; }
+    h2 { margin: 0 0 14px; font-size: 20px; }
+    h3 { margin: 0 0 10px; font-size: 16px; }
+    label { display: block; margin: 0 0 7px; color: #34466a; font-size: 13px; font-weight: 800; }
+    input, select, textarea {
+      width: 100%;
+      margin: 0 0 13px;
+      padding: 12px 13px;
+      border: 1px solid #bdd9eb;
+      border-radius: 11px;
+      color: var(--ink);
+      background: #fff;
+      outline: 0;
+    }
+    textarea { min-height: 94px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { border-color: #75c3eb; box-shadow: 0 0 0 4px rgba(117,195,235,.22); }
+    button, .button-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 0;
+      border-radius: 11px;
+      padding: 11px 15px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    .primary { color: #fff; background: #1274b5; box-shadow: 0 7px 16px rgba(18,116,181,.22); }
+    .primary:hover { background: #0e669f; }
+    .primary:active { background: #0b5b8e; transform: translateY(1px); }
+    .secondary { color: var(--navy); background: var(--blue-soft); border: 1px solid #b9ddf2; }
+    .secondary:hover { background: #c9e9fa; }
+    .ghost { color: var(--blue); background: #edf7fc; border: 1px solid #d2e8f5; }
+    .ghost:hover { background: #ddf1fc; }
+    .full { width: 100%; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 15px; }
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .notice { padding: 13px; border-radius: 12px; color: var(--ink); background: #f4fbff; border: 1px dashed #a9d4ed; line-height: 1.5; }
+    .notice.error { color: var(--red); background: var(--red-bg); border-style: solid; }
+    .requirement-reminder { margin-top: 14px; color: var(--ink); background: linear-gradient(135deg, #edf8fe, #ddf1fc); border-color: #75c3eb; }
+    .requirement-reminder a { color: var(--navy); font-weight: 800; }
+    .hidden { display: none !important; }
+
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .pill { display: inline-flex; padding: 7px 11px; border-radius: 999px; font-size: 13px; font-weight: 900; }
+    .pill.green { color: var(--green); background: var(--green-bg); }
+    .pill.amber { color: var(--amber); background: var(--amber-bg); }
+    .pill.red { color: var(--red); background: var(--red-bg); }
+    .pill.gray { color: var(--gray); background: var(--gray-bg); }
+    .requirements { display: grid; gap: 8px; margin-top: 14px; }
+    .requirement { display: flex; align-items: center; gap: 10px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 11px; background: #fcfeff; }
+    .mark { width: 23px; height: 23px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 900; }
+    .done .mark { color: var(--green); background: var(--green-bg); }
+    .missing .mark { color: var(--amber); background: var(--amber-bg); }
+
+    .portal { display: none; margin-top: 18px; }
+    .portal.visible { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; align-items: start; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
+    .info { padding: 11px; border: 1px solid var(--line); border-radius: 11px; background: #f5fbff; overflow-wrap: anywhere; }
+    .info .key { margin-bottom: 4px; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+    .info .value { font-weight: 750; }
+    .footer { margin-top: 18px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.5; }
+
+    @media (max-width: 820px) {
+      .grid, .portal.visible { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
+      .hero, .card { border-radius: 16px; }
+      .hero-top { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <img
+      class="banner"
+      src="https://lh3.googleusercontent.com/d/1M1iUt11qvh6iFeVgJusRhEbGrFpkHBDk=w1600"
+      alt="UP Circuit header"
+      decoding="async">
+
+    <section class="hero">
+      <div class="hero-top">
+        <span class="eyebrow"><span id="orgName">UP Circuit</span>&nbsp;·&nbsp;<span id="semesterBadge">26A</span></span>
+        <button id="logoutBtn" class="logout" type="button">Sign out</button>
+      </div>
+      <h1>UP Circuit Membership Portal</h1>
+      <p>Welcome, Circuiteer! This will be our official platform in filling out details relevant in renewing as a member to the Organization. Circuit Hayt!</p>
+    </section>
+
+    <section id="loginArea" class="grid">
+      <div class="card">
+        <h2>Verify your identity</h2>
+        <form id="identityForm">
+          <label for="studentNo">Student Number</label>
+          <input id="studentNo" autocomplete="username" placeholder="e.g., 2021-00001" required>
+          <label for="email">Official UP/EEE email</label>
+          <input id="email" type="email" autocomplete="email" placeholder="name@up.edu.ph" required>
+          <button id="sendCodeBtn" class="primary full" type="submit">Send verification code</button>
+        </form>
+        <p class="muted">For privacy, the portal gives the same initial message whether or not the entered account exists.</p>
+      </div>
+
+      <div class="card">
+        <div id="otpIntro" class="notice">Enter your details first. A one-time code will be sent only to the official email saved in the member masterlist.</div>
+        <form id="otpForm" class="hidden">
+          <h2>Enter the 6-digit code</h2>
+          <label for="otpCode">Verification code</label>
+          <input id="otpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required>
+          <button id="verifyCodeBtn" class="primary full" type="submit">Open my portal</button>
+        </form>
+        <div class="actions">
+          <a id="newMemberLink" class="button-link secondary hidden" target="_blank" rel="noopener">I'm a new member</a>
+          <a id="paymentLink" class="button-link ghost hidden" target="_blank" rel="noopener">Payment instructions</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="portal" class="portal">
+      <div>
+        <div class="card">
+          <div class="status-row">
+            <span id="lifecyclePill" class="pill gray">Lifecycle</span>
+            <span id="standingPill" class="pill amber">Phase 1 status</span>
+          </div>
+          <h2 id="welcomeName">Member profile</h2>
+          <p id="statusMessage" class="muted"></p>
+          <div id="possibleAlumni" class="notice hidden">Your expected graduation semester has passed. This is only a review flag; you are not classified as Alumni until graduation is confirmed.</div>
+          <div id="publicRemark" class="notice hidden"></div>
+          <h3 id="phase1Title">Phase 1 · Form 1A returning-member reaffirmation</h3>
+          <div id="requirements" class="requirements"></div>
+          <div id="requirementsReminder" class="notice requirement-reminder hidden">
+            <strong>Need to complete a requirement?</strong><br>
+            Open <a id="requirementsFormLink" target="_blank" rel="noopener">[FORM 3] 26A Requirements Completion</a> to submit your Form 5, proof of payment for any remaining renewal balance, or a replacement valid ID.
+          </div>
+          <div class="actions">
+            <button id="renewBtn" class="primary" type="button">Open my prefilled 26A Form 1A</button>
+            <a id="portalPaymentLink" class="button-link secondary hidden" target="_blank" rel="noopener">Payment instructions</a>
+          </div>
+          <div id="renewMessage" class="muted"></div>
+          <div id="form-link-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="status-row">
+            <span id="form2Pill" class="pill gray">Locked until Phase 1 approval</span>
+          </div>
+          <h2>Phase 2 · Form 2 division-related queries</h2>
+          <p id="form2Message" class="muted">Form 2 becomes available after Form 1A is Renewed or Form 1B is Approved.</p>
+          <div class="actions">
+            <button id="sensingBtn" class="primary hidden" type="button">Answer Form 2</button>
+            <button id="refreshStatusBtn" class="ghost" type="button">Refresh my status</button>
+          </div>
+          <div id="sensingMessage" class="muted"></div>
+          <div id="sensing-link-container"></div>
+        </div>
+
+        <div class="card">
+          <h2>Saved profile</h2>
+          <div id="profileInfo" class="info-grid"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Request a profile correction</h2>
+          <p class="muted">Student Number, Application Batch, lifecycle status, historical records, and payment verification remain Renewals Team-controlled.</p>
+          <form id="updateForm">
+            <label for="updateField">Field to update</label>
+            <select id="updateField" required>
+              <option value="">Select a field</option>
+              <option>Preferred Name</option>
+              <option>Pronouns</option>
+              <option>Contact Number</option>
+              <option>Address</option>
+              <option>PTCICOE</option>
+              <option>Expected Graduation Semester</option>
+            </select>
+            <div id="currentValue" class="notice muted hidden"></div>
+            <label for="newValue">Requested new value</label>
+            <textarea id="newValue" required></textarea>
+            <label for="reason">Reason or note <span class="muted">(optional)</span></label>
+            <textarea id="reason"></textarea>
+            <button id="submitUpdateBtn" class="secondary full" type="submit">Submit for Renewals Team review</button>
+          </form>
+          <div id="updateMessage" class="muted"></div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer">Personal information is shown only after email-code verification. The backend independently checks the verified respondent email, Phase 1 approval, and signed portal token before applying Form 2 responses.</p>
+  </main>
+
+  <script>
+    let meta = {};
+    let portalData = null;
+    
+    // 1. CHANGED: Now using localStorage to persist the session even if the tab closes
+    let sessionToken = localStorage.getItem('upCircuitPortalSession') || '';
+
+    const $ = id => document.getElementById(id);
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+    const safeUrl = value => /^https:\/\//i.test(String(value || '')) ? String(value) : '';
+
+    function callServer(functionName, ...args) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(error => reject(new Error(error && error.message ? error.message : String(error))))
+          [functionName](...args);
+      });
+    }
+
+    function setBusy(button, busy, busyText, normalText) {
+      button.disabled = busy;
+      button.textContent = busy ? busyText : normalText;
+    }
+
+    function showMessage(element, message, isError = false) {
+      element.textContent = message || '';
+      element.classList.toggle('error', Boolean(isError));
+    }
+
+    function statusColor(status) {
+      const value = String(status || '').toLowerCase();
+      if (value === 'renewed' || value === 'active' || value === 'completed' || value === 'approved' || value === 'created') return 'green';
+      if (value.includes('action') || value.includes('reactivation') || value.includes('verification') || value.includes('due') || value.includes('review') || value.includes('ready') || value.includes('needed')) return 'amber';
+      if (value === 'inactive') return 'red';
+      return 'gray';
+    }
+
+    function configureLink(element, url) {
+      const safe = safeUrl(url);
+      element.classList.toggle('hidden', !safe);
+      if (safe) element.href = safe;
+    }
+
+    function profileValueForField(field) {
+      const member = portalData && portalData.member || {};
+      return ({
+        'Preferred Name': member.preferredName,
+        'Pronouns': member.pronouns,
+        'Contact Number': member.contactNumber,
+        'Address': member.address,
+        'PTCICOE': member.ptcicoe || member.ptcoe,
+        'Expected Graduation Semester': member.expectedGraduation,
+      })[field] || '';
+    }
+
+    function renderPortal(data) {
+      portalData = data;
+      $('loginArea').classList.add('hidden');
+      $('portal').classList.add('visible');
+      $('logoutBtn').classList.add('visible');
+
+      $('lifecyclePill').className = 'pill ' + statusColor(data.lifecycle);
+      $('lifecyclePill').textContent = data.lifecycle || 'For Review';
+      $('standingPill').className = 'pill ' + statusColor(data.phase1Status || data.standing);
+      $('standingPill').textContent = (data.phase1Form || 'Phase 1') + ' · ' + (data.phase1Status || data.standing || 'Pending');
+      $('welcomeName').textContent = 'Hello, ' + (data.member.preferredName || data.member.fullName || 'member') + '!';
+
+      const isNewMemberPath = data.phase1Path === 'new_member';
+      let message = isNewMemberPath
+        ? 'Your new-member record is active for ' + data.semester + '. You may proceed to Form 2 when it is ready.'
+        : 'Your profile is verified. Complete the Form 1A requirements below to finish your reaffirmation.';
+      if (data.lifecycle === 'Alumni') message = 'You are recorded as Alumni. Semester renewal is not required.';
+      else if (data.lifecycle === 'Inactive') message = 'You are recorded as Inactive. Your form will be treated as a reactivation request and may require additional approval.';
+      else if (data.standing === 'Not Renewing') message = 'Your decision not to renew for ' + data.semester + ' has been recorded.';
+      else if (data.form2Answered) message = (isNewMemberPath ? 'Your Form 1B application' : 'Your Form 1A reaffirmation') + ' and Form 2 division-related queries are complete.';
+      else if (data.phase1Status === 'Renewed' || data.phase1Status === 'Approved') message = (isNewMemberPath ? 'Your Form 1B application is approved.' : 'Your Form 1A reaffirmation is complete.') + ' You may now proceed to Form 2.';
+      $('statusMessage').textContent = message;
+      $('possibleAlumni').classList.toggle('hidden', !data.isPossibleAlumni);
+      $('publicRemark').classList.toggle('hidden', !data.publicMemberRemark);
+      $('publicRemark').textContent = data.publicMemberRemark || '';
+
+      $('requirements').innerHTML = (data.requirements || []).map(item => `
+        <div class="requirement ${item.done ? 'done' : 'missing'}">
+          <span class="mark">${item.done ? '✓' : '!'}</span>
+          <span>${escapeHtml(item.label)} — ${item.done ? 'complete' : 'missing or pending'}</span>
+        </div>
+      `).join('');
+
+      const profileItems = [
+        ['Member ID', data.member.memberId],
+        ['Student Number', data.member.studentNo],
+        ['Official Email', data.member.email],
+        ['Full Name', data.member.fullName],
+        ['Preferred Name', data.member.preferredName],
+        ['Pronouns', data.member.pronouns],
+        ['Contact Number', data.member.contactNumber],
+        ['Degree Program', data.member.degreeProgram],
+        ['Application Batch', data.member.applicationBatch],
+        ['Membership Category', data.member.membershipCategory],
+        ['1st Division', data.member.firstDivision],
+        ['2nd Division', data.member.secondDivision],
+        ['Expected Graduation', data.member.expectedGraduation],
+        ['ID on File', data.member.idStatus],
+        ['ID Type', data.member.idType],
+        ['ID Source Semester', data.member.idSourceSemester],
+        ['ID Last Verified', data.member.idVerifiedAt],
+        ['Address', data.member.address],
+        ['PTCICOE', data.member.ptcicoe || data.member.ptcoe],
+      ];
+      $('profileInfo').innerHTML = profileItems.map(([key, value]) => `
+        <div class="info"><div class="key">${escapeHtml(key)}</div><div class="value">${escapeHtml(value || '—')}</div></div>
+      `).join('');
+
+      $('phase1Title').textContent = isNewMemberPath
+        ? 'Phase 1 · Form 1B new-member application'
+        : 'Phase 1 · Form 1A returning-member reaffirmation';
+      $('renewBtn').classList.toggle('hidden', !(data.canOpenForm1A ?? data.canRenew));
+      $('renewBtn').textContent = data.lifecycle === 'Inactive'
+        ? 'Open my reactivation / Form 1A'
+        : 'Open my prefilled ' + data.semester + ' Form 1A';
+
+      const requirementsUrl = safeUrl(meta.requirementsFormUrl);
+      $('requirementsReminder').classList.toggle('hidden', !requirementsUrl);
+      if (requirementsUrl) $('requirementsFormLink').href = requirementsUrl;
+
+      $('form2Pill').className = 'pill ' + statusColor(data.form2Status);
+      $('form2Pill').textContent = data.form2Status || 'Locked until Phase 1 approval';
+      $('sensingBtn').classList.toggle('hidden', !data.canOpenForm2);
+      $('sensingBtn').textContent = data.form2Answered ? 'Review or update Form 2' : 'Answer Form 2';
+      $('form2Message').textContent = data.form2Answered
+        ? 'Your Form 2 division-related response has been recorded for ' + data.semester + '.'
+        : (data.phase1Status === 'Renewed' || data.phase1Status === 'Approved')
+          ? data.canOpenForm2
+            ? 'Your Phase 1 requirements are complete. Please answer the division-related queries in Form 2.'
+            : 'Your Phase 1 requirements are complete, but Form 2 is not yet configured. Please contact the Renewals Team.'
+          : isNewMemberPath
+            ? 'Form 2 becomes available only after your Form 1B application and payment are approved.'
+            : 'Form 2 becomes available only after Form 1A is complete and payment is verified.';
+      configureLink($('portalPaymentLink'), meta.paymentInstructionsUrl);
+    }
+
+    $('identityForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      setBusy($('sendCodeBtn'), true, 'Sending…', 'Send verification code');
+      try {
+        const result = await callServer('requestOtp', {studentNo: $('studentNo').value, email: $('email').value});
+        $('otpForm').classList.remove('hidden');
+        $('otpIntro').classList.remove('error');
+        showMessage($('otpIntro'), result.message, !result.ok);
+        $('otpCode').focus();
+      } catch (error) {
+        showMessage($('otpIntro'), error.message, true);
+      } finally {
+        setBusy($('sendCodeBtn'), false, 'Sending…', 'Send verification code');
+      }
+    });
+
+    $('otpForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      setBusy($('verifyCodeBtn'), true, 'Verifying…', 'Open my portal');
+      try {
+        const result = await callServer('verifyOtp', {
+          studentNo: $('studentNo').value,
+          email: $('email').value,
+          code: $('otpCode').value,
+        });
+        if (!result.ok) throw new Error(result.message);
+        sessionToken = result.sessionToken;
+        
+        // 2. CHANGED: Save the token persistently 
+        localStorage.setItem('upCircuitPortalSession', sessionToken);
+        
+        renderPortal(result.portal);
+      } catch (error) {
+        showMessage($('otpIntro'), error.message, true);
+      } finally {
+        setBusy($('verifyCodeBtn'), false, 'Verifying…', 'Open my portal');
+      }
+    });
+
+    $('renewBtn').addEventListener('click', async () => {
+      setBusy($('renewBtn'), true, 'Preparing Form 1A…', 'Open Form 1A');
+      showMessage($('renewMessage'), '');
+      $('form-link-container').innerHTML = '';
+
+      try {
+        const result = await callServer('getPrefilledRenewalUrl', sessionToken);
+        const url = safeUrl(result.url);
+        if (!url) throw new Error('The generated Form 1A link was invalid.');
+        window.open(url, '_blank', 'noopener');
+        showMessage($('renewMessage'), 'Your personal prefilled Form 1A was opened in a new tab. The signed link expires in ' + result.expiresIn + '.');
+        $('form-link-container').innerHTML = `
+          <div style="margin-top: 15px;" class="notice">
+            <p style="margin-top: 0;"><strong>Form 1A is ready.</strong> If the new tab was blocked, use this link:</p>
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="button-link primary" style="width: 100%;">Open My Prefilled Form 1A</a>
+          </div>
+        `;
+      } catch (error) {
+        showMessage($('renewMessage'), error.message, true);
+      } finally {
+        const idleLabel = portalData && portalData.lifecycle === 'Inactive'
+            ? 'Open my reactivation / Form 1A'
+            : 'Open my prefilled ' + (portalData ? portalData.semester : '') + ' Form 1A';
+        setBusy($('renewBtn'), false, 'Preparing Form 1A…', idleLabel);
+      }
+    });
+
+    $('sensingBtn').addEventListener('click', async () => {
+      const idleLabel = portalData && portalData.form2Answered ? 'Review or update Form 2' : 'Answer Form 2';
+      setBusy($('sensingBtn'), true, 'Preparing Form 2…', idleLabel);
+      showMessage($('sensingMessage'), '');
+      $('sensing-link-container').innerHTML = '';
+      try {
+        const result = await callServer('getPrefilledForm2Url', sessionToken);
+        const url = safeUrl(result.url);
+        if (!url) throw new Error('The generated Form 2 link was invalid.');
+        window.open(url, '_blank', 'noopener');
+        showMessage($('sensingMessage'), 'Form 2 was opened in a new tab. After submitting it, return here and select “Refresh my status.”');
+        $('sensing-link-container').innerHTML = `
+          <div style="margin-top: 15px;" class="notice">
+            <p style="margin-top: 0;"><strong>Form 2 is ready.</strong> If the new tab was blocked, use this link:</p>
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="button-link primary" style="width: 100%;">Open Form 2</a>
+          </div>
+        `;
+      } catch (error) {
+        showMessage($('sensingMessage'), error.message, true);
+      } finally {
+        setBusy($('sensingBtn'), false, 'Preparing Form 2…', idleLabel);
+      }
+    });
+
+    $('refreshStatusBtn').addEventListener('click', async () => {
+      setBusy($('refreshStatusBtn'), true, 'Refreshing…', 'Refresh my status');
+      showMessage($('sensingMessage'), '');
+      try {
+        renderPortal(await callServer('getPortalData', sessionToken));
+        showMessage($('sensingMessage'), 'Your latest Phase 1 and Form 2 statuses are now shown.');
+      } catch (error) {
+        showMessage($('sensingMessage'), error.message, true);
+      } finally {
+        setBusy($('refreshStatusBtn'), false, 'Refreshing…', 'Refresh my status');
+      }
+    });
+
+    $('updateField').addEventListener('change', () => {
+      const field = $('updateField').value;
+      const value = profileValueForField(field);
+      $('currentValue').classList.toggle('hidden', !field);
+      $('currentValue').textContent = field ? 'Current saved value: ' + (value || '—') : '';
+      $('newValue').value = value;
+    });
+
+    $('updateForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      setBusy($('submitUpdateBtn'), true, 'Submitting…', 'Submit for Renewals Team review');
+      try {
+        const result = await callServer('submitProfileUpdate', sessionToken, {
+          field: $('updateField').value,
+          newValue: $('newValue').value,
+          reason: $('reason').value,
+        });
+        showMessage($('updateMessage'), result.message, !result.ok);
+        if (result.ok) $('updateForm').reset();
+      } catch (error) {
+        showMessage($('updateMessage'), error.message, true);
+      } finally {
+        setBusy($('submitUpdateBtn'), false, 'Submitting…', 'Submit for Renewals Team review');
+      }
+    });
+
+    $('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('upCircuitPortalSession');
+      sessionToken = '';
+      portalData = null;
+      $('portal').classList.remove('visible');
+      $('loginArea').classList.remove('hidden');
+      $('logoutBtn').classList.remove('visible');
+      $('identityForm').reset();
+      $('otpForm').reset();
+      $('otpForm').classList.add('hidden');
+      $('updateForm').reset();
+      $('form-link-container').innerHTML = '';
+      $('sensing-link-container').innerHTML = '';
+      showMessage($('otpIntro'), 'Enter your details first. A one-time code will be sent only to the official email saved in the member masterlist.');
+      $('studentNo').focus();
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    });
+
+    async function initialize() {
+      try {
+        const [metaResult, portalResult] = await Promise.allSettled([
+          callServer('getPortalMeta'),
+          sessionToken ? callServer('getPortalData', sessionToken) : Promise.resolve(null),
+        ]);
+
+        if (metaResult.status !== 'fulfilled') throw metaResult.reason;
+        meta = metaResult.value;
+        $('orgName').textContent = meta.orgName || 'UP Circuit';
+        $('semesterBadge').textContent = (meta.currentSemester || '26A') + ' · AY ' + (meta.academicYear || '2026–2027');
+        configureLink($('newMemberLink'), meta.newMemberFormUrl);
+        configureLink($('paymentLink'), meta.paymentInstructionsUrl);
+
+        if (sessionToken) {
+          if (portalResult.status === 'fulfilled') {
+            renderPortal(portalResult.value);
+          } else {
+            // Clear localStorage if the token is invalid or expired.
+            localStorage.removeItem('upCircuitPortalSession');
+            sessionToken = '';
+          }
+        }
+      } catch (error) {
+        showMessage($('otpIntro'), 'Portal setup is incomplete. Please contact the Renewals Team.', true);
+      }
+    }
+    initialize();
+  </script>
+</body>
+</html>
