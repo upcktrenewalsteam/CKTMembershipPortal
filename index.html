@@ -145,7 +145,17 @@
       .grid, .portal.visible { grid-template-columns: 1fr; }
       .info-grid { grid-template-columns: 1fr; }
       .hero, .card { border-radius: 16px; }
-      .hero-top { align-items: flex-start; }
+      
+      .hero-top { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 14px; 
+      }
+      
+      .logout.visible { 
+        width: 100%; 
+        justify-content: center; 
+      }
     }
   </style>
 </head>
