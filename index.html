@@ -282,13 +282,28 @@
     }[char]));
     const safeUrl = value => /^https:\/\//i.test(String(value || '')) ? String(value) : '';
 
-    function callServer(functionName, ...args) {
-      return new Promise((resolve, reject) => {
-        google.script.run
-          .withSuccessHandler(resolve)
-          .withFailureHandler(error => reject(new Error(error && error.message ? error.message : String(error))))
-          [functionName](...args);
-      });
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSgJcmKekT2NSTJJW8svydJeeUEuUDtyV1F1-Ak9XW3P8gfbHhFDqubsVfeP5ijIIjVw/exec'; // <-- PASTE YOUR APPS SCRIPT LINK HERE!
+
+    async function callServer(functionName, ...args) {
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8', 
+          },
+          body: JSON.stringify({
+            action: functionName,
+            args: args
+          })
+        });
+        
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        return result.data;
+        
+      } catch (error) {
+        throw new Error(error.message || String(error));
+      }
     }
 
     function setBusy(button, busy, busyText, normalText) {
