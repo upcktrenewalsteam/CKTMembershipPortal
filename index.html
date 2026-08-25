@@ -298,6 +298,7 @@
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
+          credentials: 'omit',
           headers: {
             'Content-Type': 'text/plain;charset=utf-8', 
           },
