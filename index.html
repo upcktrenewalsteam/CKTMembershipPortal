@@ -169,7 +169,7 @@
 
     <section class="hero">
       <div class="hero-top">
-        <span class="eyebrow"><span id="orgName">UP Circuit</span>&nbsp;·&nbsp;<span id="semesterBadge">26A</span></span>
+        <span class="eyebrow"><span id="orgName">UP Circuit</span>&nbsp;·&nbsp;<span id="semesterBadge">Current semester</span></span>
         <button id="logoutBtn" class="logout" type="button">Sign out</button>
       </div>
       <h1>UP Circuit Membership Portal</h1>
@@ -219,10 +219,10 @@
           <div id="requirements" class="requirements"></div>
           <div id="requirementsReminder" class="notice requirement-reminder hidden">
             <strong>Need to complete a requirement?</strong><br>
-            Open <a id="requirementsFormLink" target="_blank" rel="noopener">[FORM 3] 26A Requirements Completion</a> to submit your Form 5, proof of payment for any remaining renewal balance, or a replacement valid ID.
+            Open <a id="requirementsFormLink" target="_blank" rel="noopener">[FORM 3] Requirements Completion</a> to submit your Form 5, proof of payment for any remaining renewal balance, or a replacement valid ID.
           </div>
           <div class="actions">
-            <button id="renewBtn" class="primary" type="button">Open my prefilled 26A Form 1A</button>
+            <button id="renewBtn" class="primary" type="button">Open my prefilled Form 1A</button>
             <a id="portalPaymentLink" class="button-link secondary hidden" target="_blank" rel="noopener">Payment instructions</a>
           </div>
           <div id="renewMessage" class="muted"></div>
@@ -419,7 +419,7 @@
 
       const isNewMemberPath = data.phase1Path === 'new_member';
       let message = isNewMemberPath
-        ? 'Your new-member record is active for ' + data.semester + '. You may proceed to Form 2 when it is ready.'
+        ? 'You are a new member for ' + data.semester + '. Your Form 1B is your Phase 1 for this semester, so you do not need Form 1A. Your Application Batch (' + (data.member.applicationBatch || '—') + ') remains the semester when you became an Applicant.'
         : 'Your profile is verified. Complete the Form 1A requirements below to finish your reaffirmation.';
       if (data.lifecycle === 'Alumni') message = 'You are recorded as Alumni. Semester renewal is not required.';
       else if (data.lifecycle === 'Inactive') message = 'You are recorded as Inactive. Your form will be treated as a reactivation request and may require additional approval.';
@@ -448,6 +448,7 @@
         ['Contact Number', data.member.contactNumber],
         ['Degree Program', data.member.degreeProgram],
         ['Application Batch', data.member.applicationBatch],
+        ['Current Membership Semester', data.semester],
         ['Membership Category', data.member.membershipCategory],
         ['1st Division', data.member.firstDivision],
         ['2nd Division', data.member.secondDivision],
@@ -486,7 +487,7 @@
             ? 'Your Phase 1 requirements are complete. Please answer the division-related queries in Form 2.'
             : 'Your Phase 1 requirements are complete, but Form 2 is not yet configured. Please contact the Renewals Team.'
           : isNewMemberPath
-            ? 'Form 2 becomes available only after your Form 1B application and payment are approved.'
+            ? 'Form 2 becomes available after your Form 1B new-member Phase 1 is approved. You do not need Form 1A this semester.'
             : 'Form 2 becomes available only after Form 1A is complete and payment is verified.';
       configureLink($('portalPaymentLink'), meta.paymentInstructionsUrl);
     }
@@ -723,7 +724,7 @@
         if (metaResult.status !== 'fulfilled') throw metaResult.reason;
         meta = metaResult.value;
         $('orgName').textContent = meta.orgName || 'UP Circuit';
-        $('semesterBadge').textContent = (meta.currentSemester || '26A') + ' · AY ' + (meta.academicYear || '2026–2027');
+        $('semesterBadge').textContent = (meta.currentSemester || 'Current') + (meta.academicYear ? ' · AY ' + meta.academicYear : '');
         configureLink($('newMemberLink'), meta.newMemberFormUrl);
         configureLink($('paymentLink'), meta.paymentInstructionsUrl);
 
