@@ -298,25 +298,77 @@
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
+    
+          // Important for your GitHub-hosted version:
           credentials: 'omit',
+    
+          // Keep text/plain.
+          // DO NOT change this to application/json.
           headers: {
-            'Content-Type': 'text/plain;charset=utf-8', 
+            'Content-Type': 'text/plain;charset=utf-8'
           },
+    
           body: JSON.stringify({
             action: functionName,
             args: args
-          })
+          }),
+    
+          redirect: 'follow',
+          cache: 'no-store'
         });
-        
-        const result = await response.json();
-        if (result.error) throw new Error(result.error);
+    
+        const text = await response.text();
+    
+        if (!response.ok) {
+          throw new Error(
+            'Portal server returned HTTP ' +
+            response.status +
+            '.'
+          );
+        }
+    
+        let result;
+    
+        try {
+          result = JSON.parse(text);
+        } catch (parseError) {
+          console.error(
+            'Non-JSON response from Apps Script:',
+            text
+          );
+    
+          throw new Error(
+            'The portal server returned an unexpected response. ' +
+            'Please refresh and try again.'
+          );
+        }
+    
+        if (result.error) {
+          throw new Error(result.error);
+        }
+    
         return result.data;
-        
+    
       } catch (error) {
-        throw new Error(error.message || String(error));
+        console.error(
+          'callServer failed:',
+          functionName,
+          error
+        );
+    
+        if (
+          error instanceof TypeError &&
+          /fetch/i.test(error.message)
+        ) {
+          throw new Error(
+            'Could not reach the portal server. ' +
+            'Please check your connection and try again.'
+          );
+        }
+    
+        throw error;
       }
     }
-
     function setBusy(button, busy, busyText, normalText) {
       button.disabled = busy;
       button.textContent = busy ? busyText : normalText;
@@ -456,27 +508,102 @@
     });
 
     $('otpForm').addEventListener('submit', async event => {
-      event.preventDefault();
-      setBusy($('verifyCodeBtn'), true, 'Verifying…', 'Open my portal');
-      try {
+    event.preventDefault();
+  
+    setBusy(
+      $('verifyCodeBtn'),
+      true,
+      sessionToken ? 'Loading portal…' : 'Verifying…',
+      'Open my portal'
+    );
+  
+    try {
+      // STEP 1:
+      // Only verify OTP if we don't already have a verified session.
+      if (!sessionToken) {
         const result = await callServer('verifyOtp', {
           studentNo: $('studentNo').value,
           email: $('email').value,
           code: $('otpCode').value,
         });
-        if (!result.ok) throw new Error(result.message);
+  
+        if (!result.ok) {
+          throw new Error(result.message);
+        }
+  
         sessionToken = result.sessionToken;
-        
-        // 2. CHANGED: Save the token persistently 
-        localStorage.setItem('upCircuitPortalSession', sessionToken);
-        
-        renderPortal(result.portal);
-      } catch (error) {
-        showMessage($('otpIntro'), error.message, true);
-      } finally {
-        setBusy($('verifyCodeBtn'), false, 'Verifying…', 'Open my portal');
+  
+        // Save immediately after successful OTP verification.
+        localStorage.setItem(
+          'upCircuitPortalSession',
+          sessionToken
+        );
+  
+        showMessage(
+          $('otpIntro'),
+          'Identity verified. Loading your portal…',
+          false
+        );
       }
-    });
+  
+      // STEP 2:
+      // Load portal independently from OTP verification.
+      setBusy(
+        $('verifyCodeBtn'),
+        true,
+        'Loading portal…',
+        'Open my portal'
+      );
+  
+      const portal = await callServer(
+        'getPortalData',
+        sessionToken
+      );
+  
+      renderPortal(portal);
+  
+    } catch (error) {
+      const message = String(error.message || error);
+      const lower = message.toLowerCase();
+  
+      const sessionExpired =
+        lower.includes('secure session has expired') ||
+        lower.includes('invalid or expired secure token') ||
+        lower.includes('member record changed');
+  
+      if (sessionExpired) {
+        localStorage.removeItem('upCircuitPortalSession');
+        sessionToken = '';
+  
+        showMessage(
+          $('otpIntro'),
+          'Your verified session has expired. Please request a new verification code.',
+          true
+        );
+      } else if (sessionToken) {
+        // OTP already succeeded — don't make the user verify again.
+        showMessage(
+          $('otpIntro'),
+          message +
+          ' Your identity is already verified. Click “Open my portal” to retry loading.',
+          true
+        );
+      } else {
+        showMessage(
+          $('otpIntro'),
+          message,
+          true
+        );
+      }
+    } finally {
+      setBusy(
+        $('verifyCodeBtn'),
+        false,
+        'Verifying…',
+        'Open my portal'
+      );
+    }
+  });
 
     $('renewBtn').addEventListener('click', async () => {
       setBusy($('renewBtn'), true, 'Preparing Form 1A…', 'Open Form 1A');
@@ -603,10 +730,36 @@
         if (sessionToken) {
           if (portalResult.status === 'fulfilled') {
             renderPortal(portalResult.value);
+        
           } else {
-            // Clear localStorage if the token is invalid or expired.
-            localStorage.removeItem('upCircuitPortalSession');
-            sessionToken = '';
+            const error = portalResult.reason;
+            const message = String(
+              error && error.message
+                ? error.message
+                : error
+            );
+        
+            const lower = message.toLowerCase();
+        
+            const sessionExpired =
+              lower.includes('secure session has expired') ||
+              lower.includes('invalid or expired secure token') ||
+              lower.includes('member record changed');
+        
+            if (sessionExpired) {
+              // Only remove a genuinely invalid/expired session.
+              localStorage.removeItem('upCircuitPortalSession');
+              sessionToken = '';
+        
+            } else {
+              // Keep the session if this was only a temporary
+              // connection / fetch failure.
+              showMessage(
+                $('otpIntro'),
+                'Your verified session is saved, but the portal could not be loaded. Refresh the page to try again.',
+                true
+              );
+            }
           }
         }
       } catch (error) {
